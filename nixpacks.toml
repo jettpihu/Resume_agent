@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = [
+  "python310",
+  "texlive.combined.scheme-small"
+]
+
+[phases.install]
+cmds = ["pip install --no-cache-dir -r requirements.txt"]
+
+[start]
+cmd = "python agent.py"
