@@ -1,6 +1,19 @@
 # AI Resume Agent
 
+![uAgents](https://img.shields.io/badge/uAgents-mailbox--enabled-blue)
+![ATS Resume](https://img.shields.io/badge/resume-ATS--friendly-green)
+![PDF Output](https://img.shields.io/badge/output-PDF%20link-orange)
+![Edit Payment](https://img.shields.io/badge/edit%20unlock-0.01%20FET-lightgrey)
+
 Content-only resume generator agent using Fetch.ai chat protocol.
+
+## What this agent does
+
+- Accepts raw resume content from chat and builds a structured ATS-friendly profile
+- Generates a printable LaTeX resume, compiles it to PDF, and uploads it to a temporary URL
+- Returns only the final PDF link to the user
+- Supports paid resume editing with `0.01 FET` payment
+- Stores per-user state so edits can be applied to the latest generated resume
 
 ## Features
 
@@ -16,7 +29,18 @@ Content-only resume generator agent using Fetch.ai chat protocol.
 - **Create resume:** send full resume content in plain text
 - **Edit resume:** `EDIT RESUME: <your changes>`
   - Example: `EDIT RESUME: Replace summary with backend-focused version and add Kubernetes in skills`
-  - If payment is required, complete `0.01 FET` and send any follow-up message; pending edit is auto-applied.
+  - If payment is required, complete `0.01 FET`; pending edit is auto-applied immediately after payment verification.
+
+## Example queries
+
+- **Generate resume (plain content)**
+  - `Name: Gautam Kumar. Experience: 2+ years in full stack development with Python, React, Node.js...`
+- **Generate resume (JSON)**
+  - `{"name":"Your Name","email":"you@example.com","summary":"...", "experience":[...], "projects":[...], "education":[...], "skills":[...]}`
+- **Edit existing resume**
+  - `EDIT RESUME: Make summary backend-focused and add PostgreSQL, Redis, and Docker in skills.`
+- **Edit for job alignment**
+  - `EDIT RESUME: Tailor my experience bullets for a Senior Backend Engineer role and highlight API performance work.`
 
 ## State flow
 
@@ -45,8 +69,7 @@ flowchart TD
     K -- No --> L[Store pending_edit_sender]
     L --> M[Send RequestPayment 0.01 FET]
     M --> N[On CommitPayment set edit_unlocked_sender true]
-    N --> O[User sends any next message]
-    O --> P[Auto-apply pending edit]
+    N --> P[Auto-apply pending edit]
     P --> F
 
     K -- Yes --> Q[Apply edit instructions on stored resume JSON]
