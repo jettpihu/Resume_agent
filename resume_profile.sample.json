@@ -1,0 +1,50 @@
+{
+  "name": "Your Name",
+  "phone": "+91-XXXXXXXXXX",
+  "email": "youremail@example.com",
+  "location": "City, State, Country",
+  "github_url": "",
+  "linkedin_url": "",
+  "portfolio_url": "",
+  "summary": "Write 2-3 lines about your profile, core strengths, and target role.",
+  "experience": [
+    {
+      "company": "Company Name",
+      "location": "Remote / City",
+      "title": "Role Title",
+      "dates": "Jan 2024 - Present",
+      "points": [
+        "Impact-oriented bullet with measurable result.",
+        "Second bullet about ownership, scale, or technical contribution."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "tech": "Tech Stack",
+      "url": "https://github.com/username/project",
+      "description": "1-2 line project summary with outcome."
+    }
+  ],
+  "education": [
+    {
+      "institution": "College / University Name",
+      "location": "City, State",
+      "degree": "Degree Name",
+      "dates": "2020 - 2024"
+    }
+  ],
+  "skills": [
+    {
+      "category": "Languages",
+      "items": "Python, JavaScript, TypeScript"
+    },
+    {
+      "category": "Frameworks",
+      "items": "React, Next.js, Node.js, Express"
+    }
+  ],
+  "leadership": [],
+  "achievements": []
+}

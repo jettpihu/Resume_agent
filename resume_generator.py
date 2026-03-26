@@ -1,115 +1,101 @@
 import os
 import subprocess
+import re
+import shutil
+from pathlib import Path
 from jinja2 import Template
+
+
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_TEMPLATE_PATH = BASE_DIR / "templates" / "resume_template.tex.j2"
+
+
+def _escape_latex(value: str) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\~{}",
+        "^": r"\^{}",
+    }
+    escaped = "".join(replacements.get(ch, ch) for ch in text)
+    escaped = re.sub(r"\s+", " ", escaped).strip()
+    return escaped
+
+
+def _sanitize_profile(user_profile: dict) -> dict:
+    cleaned = dict(user_profile or {})
+    github_user = str(cleaned.get("github_user", "")).strip()
+    linkedin_user = str(cleaned.get("linkedin_user", "")).strip()
+    if not cleaned.get("github_url") and github_user:
+        cleaned["github_url"] = f"https://github.com/{github_user}"
+    if not cleaned.get("linkedin_url") and linkedin_user:
+        cleaned["linkedin_url"] = f"https://linkedin.com/in/{linkedin_user}"
+
+    scalar_fields = ["name", "email", "phone", "location", "summary", "github_url", "linkedin_url", "portfolio_url"]
+    for key in scalar_fields:
+        cleaned[key] = _escape_latex(cleaned.get(key, ""))
+
+    cleaned["experience"] = cleaned.get("experience", [])
+    cleaned["projects"] = cleaned.get("projects", [])
+    cleaned["education"] = cleaned.get("education", [])
+    cleaned["skills"] = cleaned.get("skills", [])
+    cleaned["leadership"] = cleaned.get("leadership", [])
+    cleaned["achievements"] = cleaned.get("achievements", [])
+
+    for job in cleaned["experience"]:
+        job["title"] = _escape_latex(job.get("title", ""))
+        job["company"] = _escape_latex(job.get("company", ""))
+        job["location"] = _escape_latex(job.get("location", ""))
+        job["dates"] = _escape_latex(job.get("dates", ""))
+        job["points"] = [_escape_latex(point) for point in job.get("points", [])]
+
+    for project in cleaned["projects"]:
+        project["name"] = _escape_latex(project.get("name", ""))
+        project["tech"] = _escape_latex(project.get("tech", ""))
+        project["description"] = _escape_latex(project.get("description", ""))
+        project["url"] = project.get("url", "").strip()
+
+    for edu in cleaned["education"]:
+        edu["dates"] = _escape_latex(edu.get("dates", ""))
+        edu["degree"] = _escape_latex(edu.get("degree", ""))
+        edu["institution"] = _escape_latex(edu.get("institution", ""))
+        edu["location"] = _escape_latex(edu.get("location", ""))
+
+    for skill in cleaned["skills"]:
+        skill["category"] = _escape_latex(skill.get("category", ""))
+        skill["items"] = _escape_latex(skill.get("items", ""))
+
+    for item in cleaned["leadership"]:
+        item["role"] = _escape_latex(item.get("role", ""))
+        item["org"] = _escape_latex(item.get("org", ""))
+        item["location"] = _escape_latex(item.get("location", ""))
+        item["dates"] = _escape_latex(item.get("dates", ""))
+        item["points"] = [_escape_latex(point) for point in item.get("points", [])]
+
+    cleaned["achievements"] = [_escape_latex(item) for item in cleaned["achievements"]]
+    return cleaned
 
 def generate_resume_latex(user_profile: dict) -> str:
     """
-    Uses Jinja2 to template a LaTeX resume using the user's provided template.
+    Generates LaTeX for a resume using a file-based Jinja2 template.
     """
-    latex_template = r"""
-\documentclass[a4paper,12pt]{article}
+    if DEFAULT_TEMPLATE_PATH.exists():
+        latex_template = DEFAULT_TEMPLATE_PATH.read_text(encoding="utf-8")
+    else:
+        raise FileNotFoundError(f"Template not found: {DEFAULT_TEMPLATE_PATH}")
 
-% PACKAGES
-\usepackage{url}
-\usepackage{parskip}
-\RequirePackage{color}
-\RequirePackage{graphicx}
-\usepackage[usenames,dvipsnames]{xcolor}
-\usepackage[scale=0.9]{geometry}
-\usepackage{tabularx}
-\usepackage{enumitem}
-\newcolumntype{C}{>{\centering\arraybackslash}X}
-\usepackage{titlesec}
-\usepackage{hyperref}
-
-\definecolor{linkcolour}{rgb}{0,0.2,0.6}
-\hypersetup{colorlinks,breaklinks,urlcolor=linkcolour,linkcolour=linkcolour}
-
-%for social icons
-\usepackage{fontawesome5}
-
-% job listing environments
-\newenvironment{jobshort}[2]
-    {
-    \begin{tabularx}{\linewidth}{@{}l X r@{}}
-    \textbf{#1} & \hfill & #2 \\[3.75pt]
-    \end{tabularx}
-    }
-    {
-    }
-
-\newenvironment{joblong}[2]
-    {
-    \begin{tabularx}{\linewidth}{@{}l X r@{}}
-    \textbf{#1} & \hfill & #2 \\[3.75pt]
-    \end{tabularx}
-    \begin{minipage}[t]{\linewidth}
-    \begin{itemize}[nosep,after=\strut, leftmargin=1em, itemsep=3pt,label=--]
-    }
-    {
-    \end{itemize}
-    \end{minipage}
-    }
-
-\begin{document}
-\pagestyle{empty}
-
-% TITLE
-\begin{tabularx}{\linewidth}{@{} C @{}}
-\Huge{ {{ name }} } \\[7.5pt]
-\href{https://github.com/{{ github_user }}}{\raisebox{-0.05\height}\faGithub\ github.com/{{ github_user }} } \ $|$ \
-\href{https://www.linkedin.com/in/{{ linkedin_user }} }{\raisebox{-0.05\height}\faLinkedin\ linkedin.com/in/{{ linkedin_user }} } \ $|$ \
-\href{mailto: {{ email }} }{\raisebox{-0.05\height}\faEnvelope\ {{ email }} } \ $|$ \
-{{ location }} \\
-\end{tabularx}
-
-% SUMMARY
-\section{Summary}
-{{ summary }}
-
-% EXPERIENCE
-\section{Experience}
-{% for job in experience %}
-\begin{joblong}{ {{ job.title }} }{ {{ job.dates }} }
-{% for point in job.points %}
-\item {{ point }}
-{% endfor %}
-\end{joblong}
-{% endfor %}
-
-% PROJECTS
-\section{Projects}
-{% for project in projects %}
-\begin{tabularx}{\linewidth}{ @{}l r@{} }
-\textbf{ {{ project.name }} } & \hfill \href{ {{ project.url }} }{GitHub} \\[3.75pt]
-\multicolumn{2}{@{}X@{}}{ {{ project.description }} } \\
-\end{tabularx}
-{% endfor %}
-
-% EDUCATION
-\section{Education}
-{% for edu in education %}
-\begin{tabularx}{\linewidth}{@{}l X@{}}
-{{ edu.dates }} & {{ edu.degree }} \\
- & \textbf{ {{ edu.institution }} }, {{ edu.location }} \\
-\end{tabularx}
-{% endfor %}
-
-% SKILLS
-\section{Skills}
-\begin{tabularx}{\linewidth}{@{}l X@{}}
-{% for skill_cat in skills %}
-\textbf{ {{ skill_cat.category }} } & {{ skill_cat.items }} \\
-{% endfor %}
-\end{tabularx}
-
-\vfill
-\center{\footnotesize Last updated: \today}
-
-\end{document}
-"""
     template = Template(latex_template)
-    return template.render(**user_profile)
+    safe_profile = _sanitize_profile(user_profile)
+    return template.render(**safe_profile)
 
 def compile_latex_to_pdf(latex_code: str, output_path: str = "output.pdf"):
     """
@@ -118,15 +104,31 @@ def compile_latex_to_pdf(latex_code: str, output_path: str = "output.pdf"):
     with open("temp.tex", "w", encoding="utf-8") as f:
         f.write(latex_code)
     try:
+        pdflatex_bin = shutil.which("pdflatex")
+        if not pdflatex_bin and Path("/Library/TeX/texbin/pdflatex").exists():
+            pdflatex_bin = "/Library/TeX/texbin/pdflatex"
+        if not pdflatex_bin:
+            return False, "pdflatex not installed on server."
+
         # Check if pdflatex is installed
-        subprocess.run(["pdflatex", "-version"], check=True, capture_output=True)
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", "temp.tex"], check=True, capture_output=True)
+        subprocess.run([pdflatex_bin, "-version"], check=True, capture_output=True)
+        compile_proc = subprocess.run(
+            [pdflatex_bin, "-interaction=nonstopmode", "temp.tex"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         if os.path.exists("temp.pdf"):
             if os.path.exists(output_path):
                 os.remove(output_path)
             os.rename("temp.pdf", output_path)
             return True, output_path
         return False, "temp.pdf was not generated."
+    except FileNotFoundError:
+        return False, "pdflatex not installed on server."
+    except subprocess.CalledProcessError as e:
+        err_tail = (e.stderr or e.stdout or "")[-800:]
+        return False, f"pdflatex compilation failed. Details: {err_tail}"
     except Exception as e:
         return False, str(e)
     finally:

@@ -1,0 +1,90 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.6in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{array}
+\pagenumbering{gobble}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.15em}
+\definecolor{heading}{RGB}{12,45,95}
+{% raw %}
+\newcommand{\resumeItem}[1]{\item \small{#1}}
+\newcommand{\resumeSubheading}[4]{
+  \textbf{#1} \hfill \textit{#2}\\
+  \textit{#3} \hfill \textit{#4}\\
+}
+{% endraw %}
+\begin{document}
+{\LARGE \textbf{ {{ name }} }}\\[3pt]
+\small
+{% if phone %}{{ phone }}{% endif %}
+{% if email %}\hspace{0.6em}$|$\hspace{0.6em}\href{mailto:{{ email }}}{{ email }}{% endif %}
+{% if github_url %}\hspace{0.6em}$|$\hspace{0.6em}\href{ {{ github_url }} }{GitHub}{% endif %}
+{% if linkedin_url %}\hspace{0.6em}$|$\hspace{0.6em}\href{ {{ linkedin_url }} }{LinkedIn}{% endif %}
+{% if portfolio_url %}\hspace{0.6em}$|$\hspace{0.6em}\href{ {{ portfolio_url }} }{Portfolio}{% endif %}
+{% if location %}\hspace{0.6em}$|$\hspace{0.6em}{{ location }}{% endif %}
+
+{% if summary %}
+\section*{\color{heading} Summary}
+\small {{ summary }}
+{% endif %}
+
+{% if experience %}
+\section*{\color{heading} Experience}
+{% for job in experience %}
+\resumeSubheading{ {{ job["company"] }} }{ {{ job["location"] }} }{ {{ job["title"] }} }{ {{ job["dates"] }} }
+\begin{itemize}
+{% for point in job["points"] %}
+  \resumeItem{ {{ point }} }
+{% endfor %}
+\end{itemize}
+{% endfor %}
+{% endif %}
+
+{% if projects %}
+\section*{\color{heading} Projects}
+{% for project in projects %}
+\textbf{ {{ project["name"] }} } \hfill \href{ {{ project["url"] }} }{Link}\\
+\small \textit{ {{ project["tech"] }} }\\
+\small {{ project["description"] }}\\[0.25em]
+{% endfor %}
+{% endif %}
+
+{% if education %}
+\section*{\color{heading} Education}
+{% for edu in education %}
+\resumeSubheading{ {{ edu["institution"] }} }{ {{ edu["location"] }} }{ {{ edu["degree"] }} }{ {{ edu["dates"] }} }
+{% endfor %}
+{% endif %}
+
+{% if skills %}
+\section*{\color{heading} Technical Skills}
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+{% for skill in skills %}
+{{ skill["category"] }}: & {{ skill["items"] }} \\
+{% endfor %}
+\end{tabularx}
+{% endif %}
+
+{% if leadership %}
+\section*{\color{heading} Leadership}
+{% for item in leadership %}
+\resumeSubheading{ {{ item["org"] }} }{ {{ item["location"] }} }{ {{ item["role"] }} }{ {{ item["dates"] }} }
+\begin{itemize}
+{% for point in item["points"] %}
+  \resumeItem{ {{ point }} }
+{% endfor %}
+\end{itemize}
+{% endfor %}
+{% endif %}
+
+{% if achievements %}
+\section*{\color{heading} Achievements}
+\begin{itemize}
+{% for item in achievements %}
+  \resumeItem{ {{ item }} }
+{% endfor %}
+\end{itemize}
+{% endif %}
+\end{document}

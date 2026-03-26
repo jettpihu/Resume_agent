@@ -1,0 +1,18 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Generated runtime files
+agent1q*_data.json
+temp.tex
+temp.aux
+temp.log
+temp.out
+missfont.log
+*.pdf
